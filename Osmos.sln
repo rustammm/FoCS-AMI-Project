@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Osmos", "Osmos\Osmos\Osmos.csproj", "{80A5CF07-FE5B-4116-9C19-1A8260EA6A23}"
 EndProject
-Project("{96E2B04D-8817-42C6-938A-82C39BA4D311}") = "OsmosContent", "Osmos\OsmosContent\OsmosContent.contentproj", "{2FED3DFE-2D78-4C4B-9CD6-E6A67E702E9E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsmosContent", "Osmos\OsmosContent\OsmosContent.contentproj", "{2FED3DFE-2D78-4C4B-9CD6-E6A67E702E9E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsmosLibrary", "OsmosLibrary\OsmosLibrary.csproj", "{6D26C509-A483-405A-A69D-E0A0090A3B64}"
 EndProject

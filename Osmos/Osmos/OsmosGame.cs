@@ -15,14 +15,20 @@ namespace Osmos
     /// <summary>
     /// This is the main type for your game
     /// </summary>
-    public class Game1 : Microsoft.Xna.Framework.Game
+    public class OsmosGame : Microsoft.Xna.Framework.Game
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         Texture2D circleTexture;
-        Circle cirle;
+        Circle circleLocalGamer;
+        HashSet<Circle> circleBots;
+        int BOTS_NUM = 10;
+        const int MAX_WIDTH = 10000;
+        const int MAX_HEIGHT = 10000;
+        Vector2 displayCenter;
+        OsmosEventHandler handler;
 
-        public Game1()
+        public OsmosGame()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
@@ -40,7 +46,28 @@ namespace Osmos
             // TODO: Add your initialization logic here
 
             base.Initialize();
-            cirle = new Circle(circleTexture, new Vector2(50, 50), new Vector2(0, 0), 50, 50, Color.White);
+            handler = new OsmosEventHandler();
+            Random rnd = new Random();
+            Circle.handler = handler;
+            Circle.MAX_HEIGHT = MAX_HEIGHT;
+            Circle.MAX_WIDTH = MAX_WIDTH;
+
+            circleLocalGamer = new Circle(circleTexture, 
+                new Vector2(rnd.Next(0, 0), rnd.Next(0, 0)), // R
+                new Vector2(0, 0), 50, Color.Red);
+
+            circleLocalGamer.Activate();
+
+
+            circleBots = new HashSet<Circle>();
+            for (int i = 0; i < BOTS_NUM; i++)
+            {
+                circleBots.Add(new Circle(circleTexture,
+                    new Vector2(rnd.Next(-MAX_WIDTH, MAX_WIDTH), rnd.Next(-MAX_HEIGHT, MAX_HEIGHT)),
+                    new Vector2(rnd.Next(-2, 2), rnd.Next(-2, 2)), 30, Color.Blue));
+                circleBots.Last<Circle>().Activate();
+            }
+
             this.IsMouseVisible = true;
         }
 
@@ -50,7 +77,7 @@ namespace Osmos
         /// </summary>
         protected override void LoadContent()
         {
-            // Create a new SpriteBatch, which can be used to draw textures.
+         // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
             circleTexture = Content.Load<Texture2D>("circle");
             
@@ -77,10 +104,43 @@ namespace Osmos
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
+            handler.OnCircleIntersectCircles = Circle.ActiveInstance;
+            handler.listenAndHandle();
             // TODO: Add your update logic here
-            cirle.OnMouseDown(Mouse.GetState());
-            cirle.Update();
+            circleLocalGamer.OnMouseDown(Mouse.GetState());
 
+            
+            displayCenter = 
+                new Vector2(graphics.PreferredBackBufferWidth / 2, graphics.PreferredBackBufferHeight / 2);
+
+
+            List<Circle> toDelete = new List<Circle>();
+
+
+            foreach (Circle activeCircle in Circle.ActiveInstance)
+            {
+                activeCircle.Update();
+                if (activeCircle.Radius <= 0)
+                {
+                    toDelete.Add(activeCircle);
+                }     
+            }
+
+            foreach (Circle deactive in toDelete)
+            {
+                deactive.Deactivate();
+            }
+
+
+            Vector2 DPosition = displayCenter - circleLocalGamer.Position;
+
+            
+            foreach (Circle activeCircle in Circle.ActiveInstance)
+            {
+                activeCircle.RelativePosition = activeCircle.Position - DPosition;
+            }
+
+            
 
             base.Update(gameTime);
         }
@@ -95,7 +155,10 @@ namespace Osmos
 
             // TODO: Add your drawing code here
             spriteBatch.Begin();
-            cirle.Draw(spriteBatch);
+            foreach (Circle activeCircle in Circle.ActiveInstance)
+            {
+                activeCircle.Draw(spriteBatch);
+            }
             spriteBatch.End();
 
 
