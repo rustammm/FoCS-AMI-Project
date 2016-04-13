@@ -52,6 +52,8 @@ namespace OsmosLibrary
             mouseWasDown = mouseIsDown;            
         }
 
+        
+
         public void listenAndHandleOnCircleIntersect()
         {
             foreach (var circleAndAct in onCircleIntersectListener)

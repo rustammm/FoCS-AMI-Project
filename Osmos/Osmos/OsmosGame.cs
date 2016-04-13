@@ -105,8 +105,11 @@ namespace Osmos
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
-
             // if ((cntUpdates++) % 10 != 0) return; 
+
+            if (circleLocalGamer.Radius <= 0)
+                this.Exit();
+
 
             circleLocalGamer.OnMouseDown(Mouse.GetState());
             handler.OnCircleIntersectCircles = Circle.ActiveInstance;

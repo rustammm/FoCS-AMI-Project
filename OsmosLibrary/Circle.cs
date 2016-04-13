@@ -35,6 +35,9 @@ namespace OsmosLibrary
         public float Radius { get; set; }
         public Color Color { get; set; }
 
+
+        bool mouseWasDown = false;
+
         public Circle ()
         {
             this.Texture = null;
@@ -95,12 +98,13 @@ namespace OsmosLibrary
         }
 
 
+       
         public void OnMouseDown(MouseState mouseState)
         {
-            if (mouseState.LeftButton == ButtonState.Pressed)
+            if (mouseState.LeftButton == ButtonState.Pressed && !mouseWasDown)
             {
-                Vector2 force = new Vector2((mouseState.X - getCenter(RelativePosition).X) / 1000,
-                    (mouseState.Y - getCenter(RelativePosition).Y) / 1000);
+                Vector2 force = new Vector2((mouseState.X - getCenter(RelativePosition).X) / 100,
+                    (mouseState.Y - getCenter(RelativePosition).Y) / 100);
 
 
                 float forceAndMass = (float)Math.Sqrt(Math.PI * Radius * Radius * force.Length());
@@ -114,20 +118,20 @@ namespace OsmosLibrary
                 this.Radius = newRadius;
 
 
-                Vector2 newPos = -force;
+                Vector2 newPos = force;
                 newPos.Normalize();
-                newPos.X *= Radius + newRad;
-                newPos.Y *= Radius + newRad;
+                newPos.X *= Radius + newRad + 1;
+                newPos.Y *= Radius + newRad + 1;
                 newPos += getCenter(Position);
                 newPos -= new Vector2(newRad, newRad);
 
 
                 Vector2 newForce = -force;
                 newForce.Normalize();
-                newForce.X *= forceAndMass;
-                newForce.Y *= forceAndMass;
+                newForce.X *= forceAndMass / 10;
+                newForce.Y *= forceAndMass / 10;
                 newForce += Force;
-
+                
 
 
                 Circle newCircle = new Circle(Texture, newPos, newForce, newRad, Color.Blue);
@@ -135,11 +139,12 @@ namespace OsmosLibrary
 
                 AddForce(force);
             }
+            mouseWasDown = mouseState.LeftButton == ButtonState.Pressed;
         }
 
 
         double recalcRadius(float Radius, float deltaSquare) {
-            return Math.Max(Math.Sqrt(Radius * Radius + deltaSquare/ Math.PI), (double)0);
+            return Math.Max(Math.Sqrt(Math.Max(Radius * Radius + deltaSquare/ Math.PI, 0)), (double)0);
         }
 
         void OnIntersectSmaller(Circle circle)
