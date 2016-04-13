@@ -27,8 +27,9 @@ namespace Osmos
         const int MAX_HEIGHT = 10000;
         Vector2 displayCenter;
         OsmosEventHandler handler;
-        int cntUpdates = 0;
+        Random rnd = new Random();
 
+        
         public OsmosGame()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -48,7 +49,6 @@ namespace Osmos
 
             base.Initialize();
             handler = new OsmosEventHandler();
-            Random rnd = new Random();
             Circle.handler = handler;
             Circle.MAX_HEIGHT = MAX_HEIGHT;
             Circle.MAX_WIDTH = MAX_WIDTH;
@@ -65,7 +65,7 @@ namespace Osmos
             {
                 circleBots.Add(new Circle(circleTexture,
                     new Vector2(rnd.Next(MAX_WIDTH), rnd.Next(MAX_HEIGHT)),
-                    new Vector2(rnd.Next(-2, 2), rnd.Next(-2, 2)), 30, Color.Blue));
+                    new Vector2(rnd.Next(-2, 2), rnd.Next(-2, 2)), rnd.Next(5, 60), Color.Blue));
                 circleBots.Last<Circle>().Activate();
             }
 
@@ -122,11 +122,13 @@ namespace Osmos
 
 
             List<Circle> toDelete = new List<Circle>();
-
+            List<Circle> allBotCircles = new List<Circle>();
 
             foreach (Circle activeCircle in Circle.ActiveInstance)
             {
                 activeCircle.Update();
+                if (activeCircle != circleLocalGamer)
+                    allBotCircles.Add(activeCircle);
                 if (activeCircle.Radius <= 0)
                 {
                     toDelete.Add(activeCircle);
@@ -136,6 +138,11 @@ namespace Osmos
             foreach (Circle deactive in toDelete)
             {
                 deactive.Deactivate();
+            }
+
+            foreach (Circle deactive in allBotCircles)
+            {
+                deactive.superCleverAI(rnd);
             }
 
 

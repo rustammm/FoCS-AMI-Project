@@ -106,42 +106,61 @@ namespace OsmosLibrary
                 Vector2 force = new Vector2((mouseState.X - getCenter(RelativePosition).X) / 100,
                     (mouseState.Y - getCenter(RelativePosition).Y) / 100);
 
-
-                float forceAndMass = (float)Math.Sqrt(Math.PI * Radius * Radius * force.Length());
-
-                float newRad = (float)recalcRadius((float)0, forceAndMass);
-
-                float newRadius = (float)recalcRadius(this.Radius, -forceAndMass);
-                this.Position += new Vector2(Radius - newRadius, Radius - newRadius);
-
-
-                this.Radius = newRadius;
-
-
-                Vector2 newPos = force;
-                newPos.Normalize();
-                newPos.X *= Radius + newRad + 1;
-                newPos.Y *= Radius + newRad + 1;
-                newPos += getCenter(Position);
-                newPos -= new Vector2(newRad, newRad);
-
-
-                Vector2 newForce = -force;
-                newForce.Normalize();
-                newForce.X *= forceAndMass / 10;
-                newForce.Y *= forceAndMass / 10;
-                newForce += Force;
-                
-
-
-                Circle newCircle = new Circle(Texture, newPos, newForce, newRad, Color.Blue);
-                newCircle.Activate();
-
-                AddForce(force);
+                jetPropulsion(force);                
             }
             mouseWasDown = mouseState.LeftButton == ButtonState.Pressed;
         }
 
+        void jetPropulsion(Vector2 force)
+        {
+            float forceAndMass = (float)Math.Sqrt(Math.PI * Radius * Radius * force.Length());
+
+            float newRad = (float)recalcRadius((float)0, forceAndMass);
+
+            float newRadius = (float)recalcRadius(this.Radius, -forceAndMass);
+            this.Position += new Vector2(Radius - newRadius, Radius - newRadius);
+
+
+            this.Radius = newRadius;
+
+
+            Vector2 newPos = force;
+            newPos.Normalize();
+            newPos.X *= Radius + newRad + 1;
+            newPos.Y *= Radius + newRad + 1;
+            newPos += getCenter(Position);
+            newPos -= new Vector2(newRad, newRad);
+
+
+            Vector2 newForce = -force;
+            newForce.Normalize();
+            newForce.X *= forceAndMass / 10;
+            newForce.Y *= forceAndMass / 10;
+            newForce += Force;
+
+
+
+            Circle newCircle = new Circle(Texture, newPos, newForce, newRad, Color.Blue);
+            newCircle.Activate();
+            AddForce(force);
+        }
+
+        public void superCleverAI(Random rnd)
+        {
+            Vector2 addForce = new Vector2(0, 0);
+
+            addForce.X = (float) (rnd.NextDouble() * rnd.NextDouble() * rnd.NextDouble());
+            addForce.Y = (float) (rnd.NextDouble() * rnd.NextDouble() * rnd.NextDouble());
+            addForce.X *= addForce.X;
+            addForce.Y *= addForce.Y;
+
+            if (addForce.Length() < 0.9 || Radius < 20) return;
+
+            addForce.X *= (float)rnd.Next(-5, 5);
+            addForce.Y *= (float)rnd.Next(-5, 5);
+
+            jetPropulsion(addForce);
+        }
 
         double recalcRadius(float Radius, float deltaSquare) {
             return Math.Max(Math.Sqrt(Math.Max(Radius * Radius + deltaSquare/ Math.PI, 0)), (double)0);
@@ -150,7 +169,6 @@ namespace OsmosLibrary
         void OnIntersectSmaller(Circle circle)
         {
             if (!intersects(circle)) return;
-            if (Color != Color.Red) return;
 
             if (this.Radius >= 50)
                 this.Radius = this.Radius;
@@ -198,9 +216,6 @@ namespace OsmosLibrary
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            if (Radius <= 0) {
-                this.Deactivate();
-            }
             if (Math.Abs(RelativePosition.X) <= MAX_WIDTH + Radius && Math.Abs(RelativePosition.Y) <= MAX_HEIGHT + Radius)
                 spriteBatch.Draw(
                     this.Texture, 
