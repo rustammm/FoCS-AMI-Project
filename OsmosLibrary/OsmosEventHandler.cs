@@ -59,7 +59,7 @@ namespace OsmosLibrary
                 Circle mainCircle = circleAndAct.Key;
                 foreach (var circle in OnCircleIntersectCircles)
                 {
-                    if (mainCircle != circle && mainCircle.intersects(circle))
+                    if (mainCircle != circle && mainCircle.Radius >= circle.Radius && mainCircle.intersects(circle))
                         circleAndAct.Value.Invoke(circle);
                 }
 

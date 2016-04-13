@@ -22,11 +22,12 @@ namespace Osmos
         Texture2D circleTexture;
         Circle circleLocalGamer;
         HashSet<Circle> circleBots;
-        int BOTS_NUM = 10;
+        int BOTS_NUM = 100;
         const int MAX_WIDTH = 10000;
         const int MAX_HEIGHT = 10000;
         Vector2 displayCenter;
         OsmosEventHandler handler;
+        int cntUpdates = 0;
 
         public OsmosGame()
         {
@@ -63,7 +64,7 @@ namespace Osmos
             for (int i = 0; i < BOTS_NUM; i++)
             {
                 circleBots.Add(new Circle(circleTexture,
-                    new Vector2(rnd.Next(-MAX_WIDTH, MAX_WIDTH), rnd.Next(-MAX_HEIGHT, MAX_HEIGHT)),
+                    new Vector2(rnd.Next(MAX_WIDTH), rnd.Next(MAX_HEIGHT)),
                     new Vector2(rnd.Next(-2, 2), rnd.Next(-2, 2)), 30, Color.Blue));
                 circleBots.Last<Circle>().Activate();
             }
@@ -104,14 +105,17 @@ namespace Osmos
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
+
+            // if ((cntUpdates++) % 10 != 0) return; 
+
+            circleLocalGamer.OnMouseDown(Mouse.GetState());
             handler.OnCircleIntersectCircles = Circle.ActiveInstance;
             handler.listenAndHandle();
             // TODO: Add your update logic here
-            circleLocalGamer.OnMouseDown(Mouse.GetState());
 
             
             displayCenter = 
-                new Vector2(graphics.PreferredBackBufferWidth / 2, graphics.PreferredBackBufferHeight / 2);
+                new Vector2(GraphicsDevice.Viewport.Bounds.Width / 2, GraphicsDevice.Viewport.Bounds.Height / 2);
 
 
             List<Circle> toDelete = new List<Circle>();
@@ -134,13 +138,18 @@ namespace Osmos
 
             Vector2 DPosition = displayCenter - circleLocalGamer.Position;
 
-            
+
+
             foreach (Circle activeCircle in Circle.ActiveInstance)
             {
-                activeCircle.RelativePosition = activeCircle.Position - DPosition;
+                activeCircle.RelativePosition = activeCircle.Position + DPosition;
             }
 
-            
+            // DEBUG
+            //Console.Write("DPos: " + DPosition + "\n");
+            //Console.Write("dispalayCenter: " + displayCenter + "\n");
+            //Console.Write("UserRadius: " + circleLocalGamer.Radius + "\n");
+            //Console.Write("User Rel Pos: " + circleLocalGamer.RelativePosition + "\n");
 
             base.Update(gameTime);
         }

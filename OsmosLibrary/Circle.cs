@@ -9,6 +9,11 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
+/// <TODO>
+///  Display Center
+///  Super Stupid AI
+/// </TODO>
+
 namespace OsmosLibrary
 {
     public class Circle: IMovableObject
@@ -27,7 +32,7 @@ namespace OsmosLibrary
         public Vector2 Force { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
-        public int Radius { get; set; }
+        public float Radius { get; set; }
         public Color Color { get; set; }
 
         public Circle ()
@@ -40,7 +45,7 @@ namespace OsmosLibrary
             Radius = 0;
         }
 
-        public Circle (Texture2D texture, Vector2 position, Vector2 force, int radius, Color color)
+        public Circle (Texture2D texture, Vector2 position, Vector2 force, float radius, Color color)
         {
             
 
@@ -49,8 +54,8 @@ namespace OsmosLibrary
             this.Position = position;
             this.Force = force;
             this.Radius = radius;
-            this.Width = radius;
-            this.Height = radius;
+            this.Width = (int)radius;
+            this.Height = (int)radius;
             this.Color = color;
 
         }
@@ -62,7 +67,7 @@ namespace OsmosLibrary
 
             
             ActiveInstance.Add(this);
-            handler.handleOnCircleIntersect(OnIntersect, this);
+            handler.handleOnCircleIntersect(OnIntersectSmaller, this);
         }
 
         public void Deactivate()
@@ -94,39 +99,90 @@ namespace OsmosLibrary
         {
             if (mouseState.LeftButton == ButtonState.Pressed)
             {
-                AddForce(new Vector2((mouseState.X - getCenter().X) / 1000,
-                    (mouseState.Y - getCenter().Y) / 1000));
+                Vector2 force = new Vector2((mouseState.X - getCenter(RelativePosition).X) / 1000,
+                    (mouseState.Y - getCenter(RelativePosition).Y) / 1000);
+
+
+                float forceAndMass = (float)Math.Sqrt(Math.PI * Radius * Radius * force.Length());
+
+                float newRad = (float)recalcRadius((float)0, forceAndMass);
+
+                float newRadius = (float)recalcRadius(this.Radius, -forceAndMass);
+                this.Position += new Vector2(Radius - newRadius, Radius - newRadius);
+
+
+                this.Radius = newRadius;
+
+
+                Vector2 newPos = -force;
+                newPos.Normalize();
+                newPos.X *= Radius + newRad;
+                newPos.Y *= Radius + newRad;
+                newPos += getCenter(Position);
+                newPos -= new Vector2(newRad, newRad);
+
+
+                Vector2 newForce = -force;
+                newForce.Normalize();
+                newForce.X *= forceAndMass;
+                newForce.Y *= forceAndMass;
+                newForce += Force;
+
+
+
+                Circle newCircle = new Circle(Texture, newPos, newForce, newRad, Color.Blue);
+                newCircle.Activate();
+
+                AddForce(force);
             }
         }
 
-        void OnIntersect(Circle circle)
+
+        double recalcRadius(float Radius, float deltaSquare) {
+            return Math.Max(Math.Sqrt(Radius * Radius + deltaSquare/ Math.PI), (double)0);
+        }
+
+        void OnIntersectSmaller(Circle circle)
         {
             if (!intersects(circle)) return;
             if (Color != Color.Red) return;
 
-            float distance = (circle.getCenter() - getCenter()).Length();
+            if (this.Radius >= 50)
+                this.Radius = this.Radius;
+
+            float distance = (circle.getCenter(circle.Position) - getCenter(Position)).Length();
             float sumRadius = circle.Radius + Radius;
             float devidingArea = sumRadius - distance;
 
-            int changedRadiusCircle = (int)(circle.Radius + devidingArea * (circle.Radius / sumRadius) - devidingArea/2);
-            int changeRadiusThis = (int)(Radius + devidingArea * (Radius / sumRadius) - devidingArea/2);
+            //int changedRadiusCircle = (int)(circle.Radius + devidingArea * (circle.Radius / sumRadius) - devidingArea/2);
+            //int changeRadiusThis = (int)(Radius + devidingArea * (Radius / sumRadius) - devidingArea/2);
 
-            Console.Write("Debug OnIntersect:\n");
-            Console.Write("Radius1 = " + circle.Radius + "\n");
-            Console.Write("Radius2 = " + Radius + "\n");
+            float intersectHeight = (float)Math.Sqrt(Radius * Radius - (Radius - devidingArea/2) * (Radius - devidingArea / 2));
+            float apprSquare = devidingArea * intersectHeight;
 
-            Console.Write("devideArea = " + devidingArea + "\n");
+            float changedRadiusCircle = (float)recalcRadius(circle.Radius, -apprSquare);
+            float changeRadiusThis = (float)recalcRadius(this.Radius, apprSquare);
 
+
+            circle.Position += new Vector2(circle.Radius - changedRadiusCircle, circle.Radius - changedRadiusCircle);
             circle.Radius = changedRadiusCircle;
+            Position -= new Vector2(this.Radius - changeRadiusThis, this.Radius - changeRadiusThis);
             this.Radius = changeRadiusThis;
-            Console.Write("Changed Radius1 = " + circle.Radius + "\n");
-            Console.Write("Changed Radius2 = " + Radius + "\n");
+
+            //Console.Write("Debug OnIntersect:\n");
+            //Console.Write("Radius1 = " + circle.Radius + "\n");
+            //Console.Write("Radius2 = " + Radius + "\n");
+
+            //Console.Write("devideArea = " + devidingArea + "\n");
+
+            //Console.Write("Changed Radius1 = " + changedRadiusCircle + "\n");
+            //Console.Write("Changed Radius2 = " + changeRadiusThis + "\n");
 
         }
 
         public bool intersects(Circle other)
         {
-            Vector2 distance = other.getCenter() - getCenter();
+            Vector2 distance = other.getCenter(other.Position) - getCenter(Position);
             return distance.Length() <= other.Radius + Radius;
         }
 
@@ -140,16 +196,17 @@ namespace OsmosLibrary
             if (Radius <= 0) {
                 this.Deactivate();
             }
-            if (Math.Abs(Position.X) <= MAX_WIDTH + Radius && Math.Abs(Position.Y) <= MAX_HEIGHT + Radius)
+            if (Math.Abs(RelativePosition.X) <= MAX_WIDTH + Radius && Math.Abs(RelativePosition.Y) <= MAX_HEIGHT + Radius)
                 spriteBatch.Draw(
                     this.Texture, 
-                    new Rectangle((int)this.RelativePosition.X, (int)this.RelativePosition.Y, this.Radius * 2, this.Radius * 2), 
+                    new Rectangle((int)this.RelativePosition.X, (int)this.RelativePosition.Y, (int)this.Radius * 2, (int)this.Radius * 2), 
                     this.Color);
         }
 
-        public Vector2 getCenter()
+        public Vector2 getCenter(Vector2 Position)
         {
-            return new Vector2(this.Position.X + this.Width / 2, this.Position.Y + this.Height / 2);
+            return new Vector2(Position.X + this.Radius, Position.Y + this.Radius);
         }
+
     }
 }
