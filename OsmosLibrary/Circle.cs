@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
+using System.Net;
 
 /// <TODO>
 ///  Display Center
@@ -16,17 +17,22 @@ using Microsoft.Xna.Framework.Media;
 
 namespace OsmosLibrary
 {
+    [Serializable]
     public class Circle: IMovableObject
     {
 
         public static OsmosEventHandler handler;
+        public static Random rnd = new Random();
 
-        public static HashSet<Circle> ActiveInstance;
+        public static HashSet<Circle> ActiveInstance = new HashSet<Circle>();
         public static int MAX_WIDTH;
         public static int MAX_HEIGHT;
         private Circle circle;
 
-        public Texture2D Texture { get; set; }
+        static public Texture2D TextureBot { get; set; }
+        static public Texture2D TextureUser { get; set; }
+        static public Texture2D TexturePlayer { get; set; }
+
         public Vector2 Position { get; set; }
         public Vector2 RelativePosition { get; set; }
         public Vector2 Force { get; set; }
@@ -34,33 +40,38 @@ namespace OsmosLibrary
         public int Height { get; set; }
         public float Radius { get; set; }
         public Color Color { get; set; }
-
-
+        const int STD_SIZE = 50;
+        
         bool mouseWasDown = false;
+
+
+        // LAN
+        public EndPoint IP { get; set; }
+        public bool Bot;
+        public bool User;
+        
 
         public Circle ()
         {
-            this.Texture = null;
             this.Position = new Vector2(0, 0);
             this.Force = new Vector2(0, 0);
             this.Width = this.Height = 0;
             this.Color = Color.White;
             Radius = 0;
+            User = false;
+            Bot = true;
         }
 
-        public Circle (Texture2D texture, Vector2 position, Vector2 force, float radius, Color color)
+        public Circle (Vector2 position, Vector2 force, float radius, Color color)
         {
-            
-
-
-            this.Texture = texture;
             this.Position = position;
             this.Force = force;
             this.Radius = radius;
             this.Width = (int)radius;
             this.Height = (int)radius;
             this.Color = color;
-
+            User = false;
+            Bot = true;
         }
 
         public void Activate()
@@ -97,18 +108,26 @@ namespace OsmosLibrary
             this.Position = new Vector2(this.Position.X % MAX_WIDTH, this.Position.Y % MAX_HEIGHT);
         }
 
-
-       
-        public void OnMouseDown(MouseState mouseState)
+        public static Circle getRandom()
         {
+            Circle ret = new Circle(new Vector2(rnd.Next(MAX_WIDTH), rnd.Next(MAX_HEIGHT)),
+                    new Vector2(rnd.Next(-2, 2), rnd.Next(-2, 2)), rnd.Next(40, 60), Color.Blue);
+            return ret;
+        }
+       
+        public bool OnMouseDown(MouseState mouseState)
+        {
+            bool ret = false;
             if (mouseState.LeftButton == ButtonState.Pressed && !mouseWasDown)
             {
                 Vector2 force = new Vector2((mouseState.X - getCenter(RelativePosition).X) / 100,
                     (mouseState.Y - getCenter(RelativePosition).Y) / 100);
 
-                jetPropulsion(force);                
+                jetPropulsion(force);
+                ret = true;                
             }
             mouseWasDown = mouseState.LeftButton == ButtonState.Pressed;
+            return ret;
         }
 
         void jetPropulsion(Vector2 force)
@@ -140,8 +159,8 @@ namespace OsmosLibrary
 
 
 
-            Circle newCircle = new Circle(Texture, newPos, newForce, newRad, Color.Blue);
-            newCircle.Activate();
+            //Circle newCircle = new Circle(newPos, newForce, newRad, Color.Blue);
+            //newCircle.Activate();
             AddForce(force);
         }
 
@@ -166,7 +185,7 @@ namespace OsmosLibrary
             return Math.Max(Math.Sqrt(Math.Max(Radius * Radius + deltaSquare/ Math.PI, 0)), (double)0);
         }
 
-        void OnIntersectSmaller(Circle circle)
+        public void OnIntersectSmaller(Circle circle)
         {
             if (!intersects(circle)) return;
 
@@ -205,6 +224,7 @@ namespace OsmosLibrary
 
         public bool intersects(Circle other)
         {
+            if (Radius <= 0 || other.Radius <= 0) return false;
             Vector2 distance = other.getCenter(other.Position) - getCenter(Position);
             return distance.Length() <= other.Radius + Radius;
         }
@@ -214,12 +234,21 @@ namespace OsmosLibrary
             Force += force;
         }
 
-        public void Draw(SpriteBatch spriteBatch)
+        public void Draw(SpriteBatch spriteBatch, int gamerRadius)
         {
-            if (Math.Abs(RelativePosition.X) <= MAX_WIDTH + Radius && Math.Abs(RelativePosition.Y) <= MAX_HEIGHT + Radius)
+            Texture2D thisTexture = TextureBot;
+            if (IP != null || !Bot)
+                thisTexture = TexturePlayer;
+            if (User)
+                thisTexture = TextureUser;
+
+            double zoom = STD_SIZE / (gamerRadius * 1.0);
+            zoom = 1;
+            int newRadius = (int)(Radius * zoom); 
+            if (Math.Abs(RelativePosition.X) * zoom <= MAX_WIDTH + Radius && Math.Abs(RelativePosition.Y) * zoom <= MAX_HEIGHT + Radius || true)
                 spriteBatch.Draw(
-                    this.Texture, 
-                    new Rectangle((int)this.RelativePosition.X, (int)this.RelativePosition.Y, (int)this.Radius * 2, (int)this.Radius * 2), 
+                    thisTexture, 
+                    new Rectangle((int)this.RelativePosition.X, (int)this.RelativePosition.Y, newRadius * 2, newRadius * 2), 
                     this.Color);
         }
 

@@ -23,7 +23,7 @@ namespace OsmosLibrary
         /* Handler's data */
 
         private bool mouseWasDown;
-        public HashSet<Circle> OnCircleIntersectCircles { get; set; }
+        public List<Circle> OnCircleIntersectCircles { get; set; }
 
         /* Init and common functions */
 
@@ -56,13 +56,13 @@ namespace OsmosLibrary
 
         public void listenAndHandleOnCircleIntersect()
         {
-            foreach (var circleAndAct in onCircleIntersectListener)
+            foreach (var circleAndAct in OnCircleIntersectCircles)
             {
-                Circle mainCircle = circleAndAct.Key;
+                Circle mainCircle = circleAndAct;
                 foreach (var circle in OnCircleIntersectCircles)
                 {
                     if (mainCircle != circle && mainCircle.Radius >= circle.Radius && mainCircle.intersects(circle))
-                        circleAndAct.Value.Invoke(circle);
+                        circleAndAct.OnIntersectSmaller(circle);
                 }
 
             }

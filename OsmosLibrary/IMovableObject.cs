@@ -14,7 +14,7 @@ namespace OsmosLibrary
     public interface IMovableObject
     {
         void AddForce(Vector2 force);
-        void Draw(SpriteBatch spriteBatch);
+        void Draw(SpriteBatch spriteBatch, int gamerRadius);
     }
 }
     

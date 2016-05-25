@@ -87,6 +87,10 @@
       <Project>{6d26c509-a483-405a-a69d-e0a0090a3b64}</Project>
       <Name>OsmosLibrary</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\OsmosMultiPlayer4\OsmosMultiPlayer4.csproj">
+      <Project>{9c15de02-a35f-44b8-9404-a864f5873971}</Project>
+      <Name>OsmosMultiPlayer4</Name>
+    </ProjectReference>
     <ProjectReference Include="..\OsmosContent\OsmosContent.contentproj">
       <Name>OsmosContent</Name>
       <XnaReferenceType>Content</XnaReferenceType>

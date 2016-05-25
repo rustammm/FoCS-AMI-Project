@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsmosContent", "Osmos\Osmos
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsmosLibrary", "OsmosLibrary\OsmosLibrary.csproj", "{6D26C509-A483-405A-A69D-E0A0090A3B64}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsmosMultiPlayer4", "OsmosMultiPlayer4\OsmosMultiPlayer4.csproj", "{9C15DE02-A35F-44B8-9404-A864F5873971}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,14 @@ Global
 		{6D26C509-A483-405A-A69D-E0A0090A3B64}.Release|Any CPU.ActiveCfg = Release|x86
 		{6D26C509-A483-405A-A69D-E0A0090A3B64}.Release|x86.ActiveCfg = Release|x86
 		{6D26C509-A483-405A-A69D-E0A0090A3B64}.Release|x86.Build.0 = Release|x86
+		{9C15DE02-A35F-44B8-9404-A864F5873971}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C15DE02-A35F-44B8-9404-A864F5873971}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C15DE02-A35F-44B8-9404-A864F5873971}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9C15DE02-A35F-44B8-9404-A864F5873971}.Debug|x86.Build.0 = Debug|Any CPU
+		{9C15DE02-A35F-44B8-9404-A864F5873971}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C15DE02-A35F-44B8-9404-A864F5873971}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C15DE02-A35F-44B8-9404-A864F5873971}.Release|x86.ActiveCfg = Release|Any CPU
+		{9C15DE02-A35F-44B8-9404-A864F5873971}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

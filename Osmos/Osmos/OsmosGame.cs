@@ -9,6 +9,9 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using OsmosLibrary;
+using OsmosMultiplayer4;
+using System.Net;
+using System.IO;
 
 namespace Osmos
 {
@@ -19,17 +22,32 @@ namespace Osmos
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        Texture2D circleTexture;
-        Circle circleLocalGamer;
-        HashSet<Circle> circleBots;
-        int BOTS_NUM = 100;
-        const int MAX_WIDTH = 10000;
-        const int MAX_HEIGHT = 10000;
+
+        Texture2D TextureBot { get; set; }
+        Texture2D TextureUser { get; set; }
+        Texture2D TexturePlayer { get; set; }
+        
+        List<Circle> circles;
+
+        int BOTS_NUM = 0;
+        const int MAX_WIDTH = 1000;
+        const int MAX_HEIGHT = 1000;
+        const int UPD_FREQ = 5;
+
         Vector2 displayCenter;
         OsmosEventHandler handler;
         Random rnd = new Random();
-
+        int cnt = 0;
         
+
+        // LAN
+        public string SERVER_IP;
+        public string Name;
+
+        public Client client = null;
+        public Server server = null;
+        public int userID;
+
         public OsmosGame()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -37,151 +55,263 @@ namespace Osmos
             
         }
 
-        /// <summary>
-        /// Allows the game to perform any initialization it needs to before starting to run.
-        /// This is where it can query for any required services and load any non-graphic
-        /// related content.  Calling base.Initialize will enumerate through any components
-        /// and initialize them as well.
-        /// </summary>
+
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
 
             base.Initialize();
+
+            using (StreamReader sr = new StreamReader("Server.info"))
+            {
+                SERVER_IP = sr.ReadLine();
+                if (SERVER_IP == "server")
+                    SERVER_IP = null;
+            }
+
+
+            if (SERVER_IP == null)
+            {
+                server = new Server();
+                server.start();
+            }
+            else
+            {
+                client = new Client(SERVER_IP, Server.PORT, Name);
+            }
+
+
+
             handler = new OsmosEventHandler();
             Circle.handler = handler;
             Circle.MAX_HEIGHT = MAX_HEIGHT;
             Circle.MAX_WIDTH = MAX_WIDTH;
-
-            circleLocalGamer = new Circle(circleTexture, 
-                new Vector2(rnd.Next(0, 0), rnd.Next(0, 0)), // R
-                new Vector2(0, 0), 50, Color.Red);
-
-            circleLocalGamer.Activate();
+            circles = new List<Circle>();
 
 
-            circleBots = new HashSet<Circle>();
-            for (int i = 0; i < BOTS_NUM; i++)
-            {
-                circleBots.Add(new Circle(circleTexture,
-                    new Vector2(rnd.Next(MAX_WIDTH), rnd.Next(MAX_HEIGHT)),
-                    new Vector2(rnd.Next(-2, 2), rnd.Next(-2, 2)), rnd.Next(5, 60), Color.Blue));
-                circleBots.Last<Circle>().Activate();
-            }
+
+            Circle.TextureBot = TextureBot;
+            Circle.TexturePlayer = TexturePlayer;
+            Circle.TextureUser = TextureUser;
 
             this.IsMouseVisible = true;
+
+            if (server == null) return;
+            userID = 0;
+            circles = new List<Circle>();
+            circles.Add(Circle.getRandom());
+            circles.Last<Circle>().User = true;
+            circles.Last<Circle>().Activate();
+            circles[userID].Bot = false;
+
+            for (int i = 0; i < BOTS_NUM; i++)
+            {
+                circles.Add(Circle.getRandom());
+                circles.Last<Circle>().Activate();
+            }
+
         }
 
-        /// <summary>
-        /// LoadContent will be called once per game and is the place to load
-        /// all of your content.
-        /// </summary>
+
         protected override void LoadContent()
         {
-         // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            circleTexture = Content.Load<Texture2D>("circle");
-            
-            // TODO: use this.Content to load your game content here
+            TextureBot = Content.Load<Texture2D>("circle");
+            TextureUser = TexturePlayer = TextureBot;
         }
 
-        /// <summary>
-        /// UnloadContent will be called once per game and is the place to unload
-        /// all content.
-        /// </summary>
+
         protected override void UnloadContent()
         {
-            // TODO: Unload any non ContentManager content here
+           
         }
 
-        /// <summary>
-        /// Allows the game to run logic such as updating the world,
-        /// checking for collisions, gathering input, and playing audio.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+            cnt++;
+            onReceiveClient();
+            onReceiveServer();
+            if (circles.Count == 0) return;
             // Allows the game to exit
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
-            // if ((cntUpdates++) % 10 != 0) return; 
-
-            if (circleLocalGamer.Radius <= 0)
+            if (circles[userID].Radius <= 0)
+            {
+                // LogOut
+                if (server == null)
+                {
+                    client.sendMessage(DataType.LogOut, null, 0, Name);
+                } 
                 this.Exit();
+            }
 
+            bool onMouseDown = circles[userID].OnMouseDown(Mouse.GetState());
 
-            circleLocalGamer.OnMouseDown(Mouse.GetState());
-            handler.OnCircleIntersectCircles = Circle.ActiveInstance;
+            handler.OnCircleIntersectCircles = circles;
             handler.listenAndHandle();
-            // TODO: Add your update logic here
-
+            
             
             displayCenter = 
-                new Vector2(GraphicsDevice.Viewport.Bounds.Width / 2, GraphicsDevice.Viewport.Bounds.Height / 2);
+                new Vector2(GraphicsDevice.Viewport.Bounds.Width / 2 - circles[userID].Radius, 
+                GraphicsDevice.Viewport.Bounds.Height / 2 - circles[userID].Radius); 
 
-
-            List<Circle> toDelete = new List<Circle>();
+            
             List<Circle> allBotCircles = new List<Circle>();
 
-            foreach (Circle activeCircle in Circle.ActiveInstance)
+            foreach (Circle activeCircle in circles)
             {
+                if (activeCircle.Radius <= 0) continue;
                 activeCircle.Update();
-                if (activeCircle != circleLocalGamer)
+                if (activeCircle.IP == null && !activeCircle.User)
                     allBotCircles.Add(activeCircle);
-                if (activeCircle.Radius <= 0)
-                {
-                    toDelete.Add(activeCircle);
-                }     
             }
+            sendUpdate(onMouseDown);
 
-            foreach (Circle deactive in toDelete)
-            {
-                deactive.Deactivate();
-            }
+            //foreach (Circle active in allBotCircles)
+            //{
+            //    active.superCleverAI(rnd);
+            //}
 
-            foreach (Circle deactive in allBotCircles)
-            {
-                deactive.superCleverAI(rnd);
-            }
-
-
-            Vector2 DPosition = displayCenter - circleLocalGamer.Position;
+            Vector2 DPosition = displayCenter - circles[userID].Position;
 
 
 
-            foreach (Circle activeCircle in Circle.ActiveInstance)
+            foreach (Circle activeCircle in circles)
             {
                 activeCircle.RelativePosition = activeCircle.Position + DPosition;
             }
 
-            // DEBUG
-            //Console.Write("DPos: " + DPosition + "\n");
-            //Console.Write("dispalayCenter: " + displayCenter + "\n");
-            //Console.Write("UserRadius: " + circleLocalGamer.Radius + "\n");
-            //Console.Write("User Rel Pos: " + circleLocalGamer.RelativePosition + "\n");
+            Console.WriteLine("Radius is " + circles[userID].Radius);
+            Console.WriteLine("Relative Position is " + circles[userID].RelativePosition);
 
             base.Update(gameTime);
         }
 
-        /// <summary>
-        /// This is called when the game should draw itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+       
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            // TODO: Add your drawing code here
             spriteBatch.Begin();
-            foreach (Circle activeCircle in Circle.ActiveInstance)
+            foreach (Circle activeCircle in circles)
             {
-                activeCircle.Draw(spriteBatch);
+                activeCircle.Draw(spriteBatch, (int)circles[userID].Radius);
             }
             spriteBatch.End();
 
 
             base.Draw(gameTime);
         }
+
+
+        void onReceiveServer() {
+            if (server == null) return;
+
+            List<Packet> packets = server.getAllReceived();
+            foreach(Packet p in packets)
+            {
+
+                Packet sendPacket = new Packet();
+
+                if (p.Type == DataType.LogIn)
+                {
+                    sendPacket.User = circles.Count;
+                    circles.Add(Circle.getRandom());
+                    circles[sendPacket.User].IP = p.IP;
+                    p.Type = DataType.GetState;
+                }
+
+
+                if (p.Type == DataType.GetState)
+                {
+                    sendPacket.Circles = circles;
+                    sendPacket.Type = DataType.GetState;
+                    
+                    for (int i = 0; i < circles.Count; i++)
+                    {
+                        Circle c = circles[i];
+                        if (c.IP != null)
+                        {
+                            sendPacket.User = i;
+                            server.sendPacketOne(sendPacket, c.IP);
+                        }
+                    }
+                }
+
+
+                if (p.Type == DataType.Update) {
+                    updateCircle(p.Circles[0]);
+                    server.sendPacket(p);
+                }
+
+            }
+
+        }
+
+        void onReceiveClient()
+        {
+            if (client == null) return;
+            if (cnt % UPD_FREQ == 0)
+            {
+                client.sendMessage(DataType.GetState, null, 0, Name);
+            }
+
+            List<Packet> packets = client.getAllReceived();
+            foreach(Packet p in packets)
+            {
+                if (p.Type == DataType.Update)
+                {
+                    updateCircle(p.Circles[0]);
+                }
+
+                if (p.Type == DataType.GetState)
+                {
+                    circles = p.Circles;
+                    userID = p.User;
+                }
+            }
+
+        }
+
+
+        void updateCircle(Circle upd)
+        {
+            for (int i = 0; i < circles.Count; i++)
+            {
+
+                if (circles[i].IP == null && upd.IP == null)
+                {
+                    circles[i] = upd;
+                    continue;
+                }
+                if (circles[i].IP == upd.IP)
+                {
+                    circles[i] = upd;
+                    continue;
+                }
+            }
+        }
+
+        void sendUpdate(bool onMouseDown)
+        {
+            if (onMouseDown)
+            {
+                if (server != null)
+                {
+                    Packet p = new Packet();
+                    p.Circles.Add(circles[userID]);
+                    p.Type = DataType.Update;
+                    p.SenderName = Name;
+                    server.sendPacket(p);
+                }
+                else
+                {
+                    List<Circle> send = new List<Circle>();
+                    send.Add(circles[userID]);
+                    client.sendMessage(DataType.Update, send, 0, Name);
+                }
+            }
+        }
+
     }
 }
