@@ -18,7 +18,7 @@ using System.Net;
 namespace OsmosLibrary
 {
     [Serializable]
-    public class Circle: IMovableObject
+    public class Circle : IMovableObject
     {
 
         public static OsmosEventHandler handler;
@@ -27,6 +27,7 @@ namespace OsmosLibrary
         public static HashSet<Circle> ActiveInstance = new HashSet<Circle>();
         public static int MAX_WIDTH;
         public static int MAX_HEIGHT;
+        public static float GRAVITY = 6.674e-11F;
         private Circle circle;
 
         static public Texture2D TextureBot { get; set; }
@@ -41,7 +42,7 @@ namespace OsmosLibrary
         public float Radius { get; set; }
         public Color Color { get; set; }
         const int STD_SIZE = 50;
-        
+
         bool mouseWasDown = false;
 
 
@@ -49,9 +50,9 @@ namespace OsmosLibrary
         public EndPoint IP { get; set; }
         public bool Bot;
         public bool User;
-        
 
-        public Circle ()
+
+        public Circle()
         {
             this.Position = new Vector2(0, 0);
             this.Force = new Vector2(0, 0);
@@ -62,7 +63,7 @@ namespace OsmosLibrary
             Bot = true;
         }
 
-        public Circle (Vector2 position, Vector2 force, float radius, Color color)
+        public Circle(Vector2 position, Vector2 force, float radius, Color color)
         {
             this.Position = position;
             this.Force = force;
@@ -79,7 +80,7 @@ namespace OsmosLibrary
             if (ActiveInstance == null)
                 ActiveInstance = new HashSet<Circle>();
 
-            
+
             ActiveInstance.Add(this);
             handler.handleOnCircleIntersect(OnIntersectSmaller, this);
         }
@@ -98,11 +99,23 @@ namespace OsmosLibrary
         {
             Deactivate();
         }
-        
 
-        public void Update()
+
+        public void Update(List<Circle> circles, int myID)
         {
-            this.Position -= this.Force;
+            Vector2 gForce = new Vector2(0, 0);
+            for (int i = 0; i < circles.Count; i++)
+            {
+                if (i == myID) continue;
+                Vector2 addGForce = circles[i].Position - this.Position;
+                float f = GRAVITY * (circles[i].Radius * this.Radius) / addGForce.LengthSquared();
+                f *= circles[i].Radius;
+                addGForce.X *= f;
+                addGForce.Y *= f;
+                gForce += addGForce;
+            }
+
+            this.Position -= this.Force - gForce;
             this.Position = new Vector2(this.Position.X % MAX_WIDTH, this.Position.Y % MAX_HEIGHT);
             this.Position = new Vector2(this.Position.X + MAX_WIDTH, this.Position.Y + MAX_HEIGHT);
             this.Position = new Vector2(this.Position.X % MAX_WIDTH, this.Position.Y % MAX_HEIGHT);
@@ -114,10 +127,14 @@ namespace OsmosLibrary
                     new Vector2(rnd.Next(-2, 2), rnd.Next(-2, 2)), rnd.Next(40, 60), Color.Blue);
             return ret;
         }
-       
-        public bool OnMouseDown(MouseState mouseState)
+
+        public bool OnMouseDown(MouseState mouseState, Vector2 display)
         {
             bool ret = false;
+
+            if (mouseState.X < 0 || mouseState.Y < 0) return false;
+            if (mouseState.X > display.X || mouseState.Y > display.Y) return false;
+            
             if (mouseState.LeftButton == ButtonState.Pressed && !mouseWasDown)
             {
                 Vector2 force = new Vector2((mouseState.X - getCenter(RelativePosition).X) / 100,
@@ -234,12 +251,12 @@ namespace OsmosLibrary
             Force += force;
         }
 
-        public void Draw(SpriteBatch spriteBatch, int gamerRadius)
+        public void Draw(SpriteBatch spriteBatch, int gamerRadius, bool localUser)
         {
             Texture2D thisTexture = TextureBot;
             if (IP != null || !Bot)
                 thisTexture = TexturePlayer;
-            if (User)
+            if (localUser)
                 thisTexture = TextureUser;
 
             double zoom = STD_SIZE / (gamerRadius * 1.0);
@@ -248,8 +265,7 @@ namespace OsmosLibrary
             if (Math.Abs(RelativePosition.X) * zoom <= MAX_WIDTH + Radius && Math.Abs(RelativePosition.Y) * zoom <= MAX_HEIGHT + Radius || true)
                 spriteBatch.Draw(
                     thisTexture, 
-                    new Rectangle((int)this.RelativePosition.X, (int)this.RelativePosition.Y, newRadius * 2, newRadius * 2), 
-                    this.Color);
+                    new Rectangle((int)this.RelativePosition.X, (int)this.RelativePosition.Y, newRadius * 2, newRadius * 2), Color.White);
         }
 
         public Vector2 getCenter(Vector2 Position)

@@ -26,12 +26,17 @@ namespace Osmos
         Texture2D TextureBot { get; set; }
         Texture2D TextureUser { get; set; }
         Texture2D TexturePlayer { get; set; }
+
+        Texture2D Background { get; set; }
+        public Vector2 BackGroundPosition { get; set; }
+
+        Vector2 Display;
         
         List<Circle> circles;
 
-        int BOTS_NUM = 0;
-        const int MAX_WIDTH = 1000;
-        const int MAX_HEIGHT = 1000;
+        int BOTS_NUM = 2;
+        int MAX_WIDTH = 1920;
+        int MAX_HEIGHT = 1080;
         const int UPD_FREQ = 5;
 
         Vector2 displayCenter;
@@ -94,6 +99,7 @@ namespace Osmos
             Circle.TextureUser = TextureUser;
 
             this.IsMouseVisible = true;
+            Mouse.WindowHandle = Window.Handle;
 
             if (server == null) return;
             userID = 0;
@@ -115,8 +121,13 @@ namespace Osmos
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            TextureBot = Content.Load<Texture2D>("circle");
-            TextureUser = TexturePlayer = TextureBot;
+
+            TextureUser   = Content.Load<Texture2D>("circle");
+            TextureBot    = Content.Load<Texture2D>("cicleBot");
+            TexturePlayer = Content.Load<Texture2D>("circlePlayer");
+
+            Background = Content.Load<Texture2D>("background");
+        
         }
 
 
@@ -127,6 +138,7 @@ namespace Osmos
 
         protected override void Update(GameTime gameTime)
         {
+            Display = new Vector2(GraphicsDevice.Viewport.Bounds.Width, GraphicsDevice.Viewport.Bounds.Height);
             cnt++;
             onReceiveClient();
             onReceiveServer();
@@ -145,7 +157,7 @@ namespace Osmos
                 this.Exit();
             }
 
-            bool onMouseDown = circles[userID].OnMouseDown(Mouse.GetState());
+            bool onMouseDown = circles[userID].OnMouseDown(Mouse.GetState(), Display);
 
             handler.OnCircleIntersectCircles = circles;
             handler.listenAndHandle();
@@ -153,15 +165,18 @@ namespace Osmos
             
             displayCenter = 
                 new Vector2(GraphicsDevice.Viewport.Bounds.Width / 2 - circles[userID].Radius, 
-                GraphicsDevice.Viewport.Bounds.Height / 2 - circles[userID].Radius); 
+                GraphicsDevice.Viewport.Bounds.Height / 2 - circles[userID].Radius);
 
-            
+
+            Vector2 userPrevPos = circles[userID].Position;
+
             List<Circle> allBotCircles = new List<Circle>();
 
-            foreach (Circle activeCircle in circles)
+            for (int i = 0; i < circles.Count; i++)
             {
+                Circle activeCircle = circles[i];
                 if (activeCircle.Radius <= 0) continue;
-                activeCircle.Update();
+                activeCircle.Update(circles, i);
                 if (activeCircle.IP == null && !activeCircle.User)
                     allBotCircles.Add(activeCircle);
             }
@@ -174,6 +189,12 @@ namespace Osmos
 
             Vector2 DPosition = displayCenter - circles[userID].Position;
 
+            Vector2 newBackGroundPos = -circles[userID].Position; 
+            BackGroundPosition = new Vector2(
+                newBackGroundPos.X % Background.Width,
+                newBackGroundPos.Y % Background.Height);
+            //BackGroundPosition = new Vector2(BackGroundPosition.X + Background.Width, BackGroundPosition.Y + Background.Height);
+            //BackGroundPosition = new Vector2(BackGroundPosition.X % Background.Width, BackGroundPosition.Y % Background.Height);
 
 
             foreach (Circle activeCircle in circles)
@@ -181,8 +202,8 @@ namespace Osmos
                 activeCircle.RelativePosition = activeCircle.Position + DPosition;
             }
 
-            Console.WriteLine("Radius is " + circles[userID].Radius);
-            Console.WriteLine("Relative Position is " + circles[userID].RelativePosition);
+            //Console.WriteLine("Radius is " + circles[userID].Radius);
+            //Console.WriteLine("Relative Position is " + circles[userID].RelativePosition);
 
             base.Update(gameTime);
         }
@@ -193,9 +214,30 @@ namespace Osmos
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             spriteBatch.Begin();
-            foreach (Circle activeCircle in circles)
+
+            // Background
+            List<KeyValuePair<int, int>> substract = new List<KeyValuePair<int, int>>();
+            substract.Add(new KeyValuePair<int, int>(0, 0));
+            substract.Add(new KeyValuePair<int, int>(-1, 0));
+            substract.Add(new KeyValuePair<int, int>(0, -1));
+            substract.Add(new KeyValuePair<int, int>(-1, -1));
+
+            for (int i = 0; i < 4; i++)
             {
-                activeCircle.Draw(spriteBatch, (int)circles[userID].Radius);
+                spriteBatch.Draw(Background,
+                new Rectangle(
+                    (int)BackGroundPosition.X - Background.Width * (int)substract[i].Key, 
+                    (int)BackGroundPosition.Y - Background.Height * (int)substract[i].Value, 
+                    Background.Width, Background.Height), 
+                Color.White);
+
+            }
+
+            // Circles
+            for (int i = 0; i < circles.Count; i++)
+            {
+                var activeCircle = circles[i];
+                activeCircle.Draw(spriteBatch, (int)circles[userID].Radius, i == userID);
             }
             spriteBatch.End();
 
@@ -284,7 +326,7 @@ namespace Osmos
                     circles[i] = upd;
                     continue;
                 }
-                if (circles[i].IP == upd.IP)
+                if (circles[i].IP != null && circles[i].IP.Equals(upd.IP))
                 {
                     circles[i] = upd;
                     continue;
