@@ -15,7 +15,7 @@
 - Первая контрольная точка (выполнен)
 - Вторая контрольная точка (выполнен)
 - Третья контрольная точка (выполнен)
-(Закрытые milestones)[https://github.com/rustammm/FoCS-AMI-Project/milestones?state=closed]
+[Закрытые milestones](https://github.com/rustammm/FoCS-AMI-Project/milestones?state=closed)
 
 Результатом работы стала игра, написанная с помощью XNA framework(.NET 4.0). Геймплей напоминает игры Osmos и Agar.io.
 С помощью реактивной тяги игрок передвигается по карте(при клике мыши сфера перемещается в обратном относитьльно мыши направлении).
@@ -42,6 +42,6 @@
 
 По плану и задачам описанным в Milestones выполнены все пункты
 - Первая контрольная точка - создан репозиторй
-- (Вторая контрольная точка)[https://github.com/rustammm/FoCS-AMI-Project/issues?q=milestone%3A%22%D0%92%D1%82%D0%BE%D1%80%D0%B0%D1%8F+%D0%BA%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D1%82%D0%BE%D1%87%D0%BA%D0%B0%22]
-- (Третья контрольная точка)[https://github.com/rustammm/FoCS-AMI-Project/issues?q=milestone%3A%22%D0%A2%D1%80%D0%B5%D1%82%D1%8C%D1%8F+%D0%BA%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D1%82%D0%BE%D1%87%D0%BA%D0%B0%22]
+- [Вторая контрольная точка](https://github.com/rustammm/FoCS-AMI-Project/issues?q=milestone%3A%22%D0%92%D1%82%D0%BE%D1%80%D0%B0%D1%8F+%D0%BA%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D1%82%D0%BE%D1%87%D0%BA%D0%B0%22)
+- [Третья контрольная точка](https://github.com/rustammm/FoCS-AMI-Project/issues?q=milestone%3A%22%D0%A2%D1%80%D0%B5%D1%82%D1%8C%D1%8F+%D0%BA%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D1%82%D0%BE%D1%87%D0%BA%D0%B0%22)
 
