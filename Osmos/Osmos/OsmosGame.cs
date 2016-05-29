@@ -26,6 +26,7 @@ namespace Osmos
         Texture2D TextureBot { get; set; }
         Texture2D TextureUser { get; set; }
         Texture2D TexturePlayer { get; set; }
+        List<Texture2D> achievments;
 
         Texture2D Background { get; set; }
         public Vector2 BackGroundPosition { get; set; }
@@ -70,7 +71,11 @@ namespace Osmos
             {
                 SERVER_IP = sr.ReadLine();
                 if (SERVER_IP == "server")
+                {
                     SERVER_IP = null;
+                    BOTS_NUM = Int32.Parse(sr.ReadLine());
+                }
+
             }
 
 
@@ -87,16 +92,13 @@ namespace Osmos
 
 
             handler = new OsmosEventHandler();
-            Circle.handler = handler;
+
+            for (int i = 0; i < handler.Achievements.Count; i++)
+                handler.Achievements[i].Texture = achievments[i];
+            
             Circle.MAX_HEIGHT = MAX_HEIGHT;
             Circle.MAX_WIDTH = MAX_WIDTH;
             circles = new List<Circle>();
-
-
-
-            Circle.TextureBot = TextureBot;
-            Circle.TexturePlayer = TexturePlayer;
-            Circle.TextureUser = TextureUser;
 
             this.IsMouseVisible = true;
             Mouse.WindowHandle = Window.Handle;
@@ -120,12 +122,24 @@ namespace Osmos
 
         protected override void LoadContent()
         {
+            achievments = new List<Texture2D>();
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
+            // Achievments
+
+            achievments.Add(Content.Load<Texture2D>("Achievments\\bigger70"));
+            achievments.Add(Content.Load<Texture2D>("Achievments\\bigger100"));
+            achievments.Add(Content.Load<Texture2D>("Achievments\\absorb1"));
+            achievments.Add(Content.Load<Texture2D>("Achievments\\absorb3"));
+            achievments.Add(Content.Load<Texture2D>("Achievments\\absorb10"));
+
+
+            // Circles
             TextureUser   = Content.Load<Texture2D>("circle");
             TextureBot    = Content.Load<Texture2D>("cicleBot");
             TexturePlayer = Content.Load<Texture2D>("circlePlayer");
 
+            // Background
             Background = Content.Load<Texture2D>("background");
         
         }
@@ -142,6 +156,14 @@ namespace Osmos
             cnt++;
             onReceiveClient();
             onReceiveServer();
+
+
+            Circle.handler = handler;
+            Circle.TextureBot = TextureBot;
+            Circle.TexturePlayer = TexturePlayer;
+            Circle.TextureUser = TextureUser;
+
+
             if (circles.Count == 0) return;
             // Allows the game to exit
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
@@ -159,6 +181,7 @@ namespace Osmos
 
             bool onMouseDown = circles[userID].OnMouseDown(Mouse.GetState(), Display);
 
+            handler.UserCircle = circles[userID];
             handler.OnCircleIntersectCircles = circles;
             handler.listenAndHandle();
             
@@ -231,6 +254,23 @@ namespace Osmos
                     Background.Width, Background.Height), 
                 Color.White);
 
+            }
+
+            // Achievments
+            
+            for (int i = 0; i < handler.Achievements.Count; i++) {
+                var achiev = handler.Achievements[i];
+                if (achiev.Show && !achiev.Achieved)
+                {
+                    achiev.ShowLeft--;
+                    if (achiev.ShowLeft == 0)
+                        achiev.Achieved = true;
+
+                    spriteBatch.Draw(achiev.Texture,
+                        new Rectangle((int)Display.X - achiev.Texture.Width, 0, achiev.Texture.Width, achiev.Texture.Height),
+                        Color.White);
+                    break;
+                }
             }
 
             // Circles

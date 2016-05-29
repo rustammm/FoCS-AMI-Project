@@ -24,13 +24,17 @@ namespace OsmosLibrary
 
         private bool mouseWasDown;
         public List<Circle> OnCircleIntersectCircles { get; set; }
-
+        public List<OsmosAchievment> Achievements { get; set; }
+        public Circle UserCircle { get; set; } 
         /* Init and common functions */
 
         public OsmosEventHandler()
         {
             mouseWasDown = false;
             onCircleIntersectListener = new HashSet<KeyValuePair<Circle, Action<Circle>>>();
+            Achievements = new List<OsmosAchievment>();
+            for (int i = 1; i <= 5; i++)
+                Achievements.Add(new OsmosAchievment(i));
         }
 
 
@@ -38,10 +42,31 @@ namespace OsmosLibrary
         {
             listenAndHandleOnMouseClick();
             listenAndHandleOnCircleIntersect();
+            listenAndHandleAchievments();
+
+
         }
 
 
         // listening and handling
+
+        public void listenAndHandleAchievments()
+        {
+            if (UserCircle.Radius > 70)
+                Achievements[0].ShowAchievment();
+
+            if (UserCircle.Radius > 100)
+                Achievements[1].ShowAchievment();
+
+            if (UserCircle.Absorbed >= 1)
+                Achievements[2].ShowAchievment();
+
+            if (UserCircle.Absorbed >= 3)
+                Achievements[3].ShowAchievment();
+
+            if (UserCircle.Absorbed >= 10)
+                Achievements[4].ShowAchievment();
+        }
 
         public void listenAndHandleOnMouseClick()
         {

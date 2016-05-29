@@ -41,6 +41,7 @@ namespace OsmosLibrary
         public int Height { get; set; }
         public float Radius { get; set; }
         public Color Color { get; set; }
+        public int Absorbed { get; set; }
         const int STD_SIZE = 50;
 
         bool mouseWasDown = false;
@@ -58,6 +59,7 @@ namespace OsmosLibrary
             this.Force = new Vector2(0, 0);
             this.Width = this.Height = 0;
             this.Color = Color.White;
+            Absorbed = 0;
             Radius = 0;
             User = false;
             Bot = true;
@@ -73,6 +75,7 @@ namespace OsmosLibrary
             this.Color = color;
             User = false;
             Bot = true;
+            Absorbed = 0;
         }
 
         public void Activate()
@@ -82,7 +85,7 @@ namespace OsmosLibrary
 
 
             ActiveInstance.Add(this);
-            handler.handleOnCircleIntersect(OnIntersectSmaller, this);
+            // handler.handleOnCircleIntersect(OnIntersectSmaller, this);
         }
 
         public void Deactivate()
@@ -237,6 +240,8 @@ namespace OsmosLibrary
             //Console.Write("Changed Radius1 = " + changedRadiusCircle + "\n");
             //Console.Write("Changed Radius2 = " + changeRadiusThis + "\n");
 
+            if (circle.Radius <= 0)
+                Absorbed++;
         }
 
         public bool intersects(Circle other)
