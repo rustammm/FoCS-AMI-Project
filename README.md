@@ -1,5 +1,6 @@
 # Проект 
 Автор: Абдумуталова Рустама, группа 153
+[Итоговый отчет](https://github.com/rustammm/FoCS-AMI-Project/blob/master/FinalReport.md)
 
 ## Описание проекта 
 Проект - 2D игра, за основу которой взята игра Osmos 
